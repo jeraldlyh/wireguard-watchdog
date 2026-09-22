@@ -16,7 +16,7 @@ Run in an elevated PowerShell (admin):
 .\install.ps1
 ```
 
-The installer copies the script to `%ProgramFiles%\wg-watchdog`, creates `%ProgramData%\wg-watchdog`, and registers the scheduled task `wg-watchdog`, which runs every 30 seconds as SYSTEM.
+The installer copies the script to `%ProgramFiles%\wg-watchdog`, creates `%ProgramData%\wg-watchdog`, and registers the scheduled task `wg-watchdog`, which runs every minute as SYSTEM.
 
 Edit the config:
 
@@ -44,5 +44,6 @@ Removes the scheduled task and installed script. Your `config.ps1` is kept.
 
 ## Notes
 
+- Task Scheduler's minimum repetition interval is 1 minute.
 - On a failed ping, the tunnel is restarted with `Restart-Service "WireGuardTunnel$<name>"`.
 - Log file: `C:\ProgramData\wg-watchdog\wg-watchdog.log`

@@ -14,7 +14,7 @@ if (-not (Test-Path -LiteralPath "$DataDir\config.ps1")) {
 }
 
 $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$InstallDir\wg-watchdog.ps1`""
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Seconds 30) -RepetitionDuration (New-TimeSpan -Days 3650)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 1)
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -MultipleInstances IgnoreNew
 
@@ -22,7 +22,7 @@ Register-ScheduledTask -TaskName 'wg-watchdog' -Action $action -Trigger $trigger
 
 Write-Host 'Install complete.'
 Write-Host ''
-Write-Host '  Scheduled task: wg-watchdog (every 30 seconds, as SYSTEM)'
+Write-Host '  Scheduled task: wg-watchdog (every minute, as SYSTEM)'
 Write-Host "  Script:         $InstallDir\wg-watchdog.ps1"
 Write-Host "  Config:         $DataDir\config.ps1"
 Write-Host "  Log:            $DataDir\wg-watchdog.log"

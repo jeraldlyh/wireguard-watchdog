@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/logging.sh"
+
+CONFIG_FILE=${CONFIG_FILE:-'/etc/wg-watchdog/config.env'}
+
+if [[ ! -r "$CONFIG_FILE" ]]; then
+    log_error "Config file not found or unreadable: $CONFIG_FILE"
+    log_error "Set it up from the example: sudo cp $(dirname "$CONFIG_FILE")/config.example.env $CONFIG_FILE"
+    exit 1
+fi
+
+source "$CONFIG_FILE"
+
+restart_wg() {
+    local interface="$1"
+
+    case "$RESTART_MODE" in
+    systemd)
+        systemctl restart "wg-quick@${interface}.service"
+    ;;
+    wg-quick)
+        wg-quick down "$interface" || true
+        wg-quick up "$interface"
+    ;;
+    *)
+        log_error "Unknown RESTART_MODE '$RESTART_MODE' (expected: systemd or wg-quick)"
+        return 1
+    ;;
+    esac
+}
+
+ping_check() {
+    local interface="$1"
+    local target="$2"
+
+    if ping -I "$interface" -c "$PING_COUNT" -W "$PING_TIMEOUT" -i "$PING_INTERVAL" $PING_EXTRA_OPTS "$target" >/dev/null; then
+        log_info "$interface: $target is reachable"
+        return
+    fi
+
+    log_error "$interface: $target is unreachable, restarting interface (mode: $RESTART_MODE)"
+    restart_wg "$interface"
+}
+
+main() {
+    local interface target
+
+    if ! declare -p PING_TARGETS &>/dev/null; then
+        log_error "PING_TARGETS is not defined in $CONFIG_FILE"
+        exit 1
+    fi
+    for interface in "${!PING_TARGETS[@]}"; do
+        target="${PING_TARGETS[$interface]}"
+
+        if [[ -z "${target:-}" ]]; then
+            log_error "$interface: no ping target configured, skipping"
+            continue
+        fi
+        ping_check "$interface" "$target"
+    done
+}
+
+main "$@"
